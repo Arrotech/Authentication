@@ -74,9 +74,3 @@ class Database:
         self.conn.commit()
         self.curr.close()
         return fetch_one
-
-
-if __name__ == '__main__':
-    Database().destroy_table()
-    Database().create_table()
-    Database().create_admin()
