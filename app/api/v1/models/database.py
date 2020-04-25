@@ -67,9 +67,9 @@ class Database:
         self.curr.close()
         return fetch_all
 
-    def fetch_one(self, query):
+    def fetch_one(self, query, var):
         """Fetch one query."""
-        self.curr.execute(query)
+        self.curr.execute(query, (var,),)
         fetch_one = self.curr.fetchone()
         self.conn.commit()
         self.curr.close()

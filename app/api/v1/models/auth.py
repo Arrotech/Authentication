@@ -38,25 +38,21 @@ class UsersModel(Database):
 
     def get_username(self, username):
         """Request a single user with specific Username."""
-        self.curr.execute(
-            """ SELECT * FROM users WHERE username=%s""", (username,))
-        user = self.curr.fetchone()
-        self.conn.commit()
-        self.curr.close()
+        query = "SELECT * FROM users WHERE username=%s"
+        var = username
+        user = Database().fetch_one(query, (var,),)
         return json.dumps(user, default=str)
 
     def get_email(self, email):
         """Request a single user with specific Email Address."""
-        self.curr.execute(''' SELECT * FROM users WHERE email=%s''', (email,))
-        user = self.curr.fetchone()
-        self.conn.commit()
-        self.curr.close()
+        query = "SELECT * FROM users WHERE email=%s"
+        var = email
+        user = Database().fetch_one(query, (var,),)
         return json.dumps(user, default=str)
 
     def get_phone(self, phone):
         """Request a single user with specific Phone Number."""
-        self.curr.execute(''' SELECT * FROM users WHERE phone=%s''', (phone,))
-        user = self.curr.fetchone()
-        self.conn.commit()
-        self.curr.close()
+        query = "SELECT * FROM users WHERE phone=%s"
+        var = phone
+        user = Database().fetch_one(query, (var,),)
         return json.dumps(user, default=str)
