@@ -1,10 +1,15 @@
 """Import flask module."""
-from flask import Flask, jsonify, make_response, Blueprint
+import os
+from os import path
+from dotenv import load_dotenv
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_mail import Mail
+from flask import Flask, jsonify, make_response, Blueprint
 from flask_restful import Api
 
-from app.api.v1.views.auth import auth
+from app.api.v1.models.database import Database
+from app.api.v1 import auth_v1
 from app.config import app_config
 
 
@@ -26,17 +31,27 @@ def method_not_allowed(e):
 
 def auth_app(config_name):
     """Create the authentication app."""
-    app = Flask(__name__)
-    CORS(app)
-
+    app = Flask(__name__, template_folder='../../../templates')
+    config_name = os.getenv('FLASK_ENV')
     app.config.from_pyfile('config.py')
-    app.config["SECRET_KEY"] = 'thisisarrotech'
-    jwt = JWTManager(app)
+    app.config['SECRET_KEY'] = "thisisarrotech"
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+ 
 
-    api = Api(app)
+    CORS(app)
+    JWTManager(app)
+    Mail(app)
 
-    app.register_blueprint(auth, url_prefix='/api/v1/')
+    app.register_blueprint(auth_v1, url_prefix='/api/v1/')
     app.register_error_handler(404, page_not_found)
     app.register_error_handler(405, method_not_allowed)
+
+    basedir = path.abspath(path.dirname(__file__))
+    load_dotenv(path.join(basedir, '.env'))
 
     return app

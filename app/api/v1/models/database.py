@@ -28,6 +28,8 @@ class Database:
                 username varchar NOT NULL,
                 email varchar NOT NULL,
                 password varchar NOT NULL,
+                is_confirmed BOOLEAN DEFAULT False,
+                confirmed_on TIMESTAMP,
                 date TIMESTAMP
             )"""
         ]
@@ -38,14 +40,6 @@ class Database:
             self.curr.close()
         except Exception as e:
             return e
-
-    def create_admin(self):
-        """Create a deafult admin user."""
-        query = "INSERT INTO users(firstname,lastname,phone,username,email, password)\
-        VALUES('Harun','Gachanja','0711371265','Arrotech','admin@admin.com','pbkdf2:sha256:50000$aNlgJU9E$bf5d2dc9783e38f905618aacd50eb55b098f282dc6b03834aee7c4f80a9100e8')"
-        self.curr.execute(query)
-        self.conn.commit()
-        self.curr.close()
 
     def destroy_table(self):
         """Destroy tables"""
