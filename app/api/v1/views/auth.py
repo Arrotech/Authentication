@@ -1,15 +1,16 @@
 import json
-from flask import make_response, jsonify, request, Blueprint
+from flask import make_response, jsonify, request, Blueprint, render_template
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token, jwt_refresh_token_required, get_raw_jwt
 from app.api.v1.models.auth import UsersModel
-from utils.v1.validations import is_valid_email, raise_error, check_register_keys, check_login_keys, is_valid_password, is_valid_phone
+from utils.v1.validations import default_decode_token, default_encode_token, generate_url, is_valid_email, raise_error, check_register_keys, check_login_keys, is_valid_password, is_valid_phone
 import datetime
 from werkzeug.security import check_password_hash
+from app.__init__ import auth_app
+from app.api.v1.services.mails.mail_services import send_email
+from app.api.v1 import auth_v1
 
-auth = Blueprint('auth', __name__)
 
-
-@auth.route('/auth/register', methods=['POST'])
+@auth_v1.route('/auth/register', methods=['POST'])
 def signup():
     """A new user can create a new account."""
     errors = check_register_keys(request)
@@ -44,6 +45,14 @@ def signup():
     user = UsersModel(firstname, lastname, phone,
                       username, email, password).save()
     user = json.loads(user)
+    token = default_encode_token(email, salt='email-confirm-key')
+    confirm_url = generate_url('auth_v1.confirm_email', token=token)
+    send_email('Confirm Your Email',
+               sender='arrotechdesign@gmail.com',
+               recipients=[email],
+               text_body=render_template(
+                   'email_confirmation.txt', confirm_url=confirm_url),
+               html_body=render_template('email_confirmation.html', confirm_url=confirm_url))
     return make_response(jsonify({
         "message": "Account created successfully!",
         "status": "201",
@@ -51,7 +60,7 @@ def signup():
     }), 201)
 
 
-@auth.route('/auth/login', methods=['POST'])
+@auth_v1.route('/auth/login', methods=['POST'])
 def login():
     """Already existing user can sign in to their account."""
     errors = check_login_keys(request)
@@ -84,8 +93,28 @@ def login():
         "message": "Invalid Email or Password"
     }), 401)
 
+@auth_v1.route('/confirm/<token>')
+def confirm_email(token):
+    """Confirm email."""
+    try:
+        email = default_decode_token(
+            token, salt='email-confirm-key', expiration=3600)
+    except:
+        return raise_error(404, "User not found")
+    user = json.loads(UsersModel().get_email(email))
+    user_id = user['user_id']
+    if user:
+        response = json.loads(UsersModel().confirm_email(
+            user_id, is_confirmed=True))
+        return make_response(jsonify({
+            "status": "200",
+            "message": "You have confirmed your email successfully",
+            "is_confirmed": response
+        }), 200)
+    return raise_error(404, "User not found")
 
-@auth.route('/auth/refresh', methods=['POST'])
+
+@auth_v1.route('/auth/refresh', methods=['POST'])
 @jwt_refresh_token_required
 def refresh():
     """Get the access token."""
@@ -98,7 +127,7 @@ def refresh():
     return jsonify(ret), 200
 
 
-@auth.route('/auth/protected', methods=['GET'])
+@auth_v1.route('/auth/protected', methods=['GET'])
 @jwt_required
 def protected():
     """Access the protected route."""
@@ -106,7 +135,7 @@ def protected():
     return jsonify(logged_in_as=email), 200
 
 
-@auth.route('/users', methods=['GET'])
+@auth_v1.route('/users', methods=['GET'])
 @jwt_required
 def get_users():
     """Get all users."""
@@ -117,7 +146,7 @@ def get_users():
     }), 200)
 
 
-@auth.route('/users/<string:username>', methods=['GET'])
+@auth_v1.route('/users/<string:username>', methods=['GET'])
 @jwt_required
 def get_user(username):
     """Get a specific user by the username."""
