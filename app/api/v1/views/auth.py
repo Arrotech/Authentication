@@ -104,13 +104,9 @@ def confirm_email(token):
     user = json.loads(UsersModel().get_email(email))
     user_id = user['user_id']
     if user:
-        response = json.loads(UsersModel().confirm_email(
+        json.loads(UsersModel().confirm_email(
             user_id, is_confirmed=True))
-        return make_response(jsonify({
-            "status": "200",
-            "message": "You have confirmed your email successfully",
-            "is_confirmed": response
-        }), 200)
+        return render_template("check_email.html")
     return raise_error(404, "User not found")
 
 
