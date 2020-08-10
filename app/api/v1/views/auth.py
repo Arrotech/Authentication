@@ -1,5 +1,5 @@
 import json
-from flask import make_response, jsonify, request, Blueprint, render_template, url_for
+from flask import make_response, jsonify, request, Blueprint, render_template, url_for, redirect
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token, jwt_refresh_token_required, get_raw_jwt
 from app.api.v1.models.auth import UsersModel
 from utils.v1.validations import default_decode_token, default_encode_token, generate_url, is_valid_email, raise_error, check_register_keys, check_login_keys, is_valid_password, is_valid_phone
@@ -7,6 +7,7 @@ import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.__init__ import auth_app
 from app.api.v1.services.mails.mail_services import send_email
+from app.api.v1.forms.forms import EmailForm, PasswordForm
 from app.api.v1 import auth_v1
 
 
@@ -137,20 +138,18 @@ def reset_with_token(token):
         email = default_decode_token(token, salt='email-confirm-key', expiration=3600)
     except:
         return raise_error(404, "User not found")
-    details = request.get_json()
-    password = details['password']
-    user = json.loads(UsersModel().get_email(email))
-    user_id = user['user_id']
-    if user:
-        new_password = generate_password_hash(password)
-        json.loads(UsersModel().reset_password(
-            new_password, user_id))
-        return make_response(jsonify({
-            "message": "Password reset successful",
-            "status": "201",
-            "user": new_password
-        }), 201)
-    return raise_error(404, "User not found")
+    form = PasswordForm()
+    if form.validate_on_submit():
+        user = json.loads(UsersModel().get_email(email))
+        user_id = user['user_id']
+        if user:
+            password = form.password.data
+            password_hash = generate_password_hash(password)
+            json.loads(UsersModel().reset_password(
+                password_hash, user_id))
+            return redirect(url_for('auth_v1.login'))
+        return raise_error(404, "User not found")
+    return render_template('reset_form.html', form=form, token=token)
 
 
 @auth_v1.route('/auth/refresh', methods=['POST'])
