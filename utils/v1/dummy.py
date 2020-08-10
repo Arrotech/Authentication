@@ -117,3 +117,16 @@ wrong_email_login = {
     "email": "harungitundu94@gmail.com",
     "password": "Harun20930988!"
 }
+
+unhashed_password = {
+    "email": "petergitundu94@gmail.com",
+    "password": "HUIDhigg4367863"    
+}
+
+reset_email = {
+    "email": "petergitundu94@gmail.com"
+}
+
+unexisting_reset_email = {
+    "email": "njokevin@gmail.com"
+}

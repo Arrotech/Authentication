@@ -4,7 +4,8 @@ from utils.v1.dummy import new_account, wrong_account_keys, wrong_account_firstn
     wrong_account_lastname,\
     wrong_account_phone, wrong_account_email,\
     wrong_account_password, phone_exists, username_exists,\
-    email_exists, wrong_login_keys, wrong_password_login, wrong_email_login
+    email_exists, wrong_login_keys, wrong_password_login, wrong_email_login, unhashed_password, reset_email,\
+    unexisting_reset_email
 from .base_test import BaseTest
 
 
@@ -19,6 +20,15 @@ class TestUsersAccount(BaseTest):
         result = json.loads(response.data.decode())
         self.assertEqual(result['message'], 'Account created successfully!')
         assert response.status_code == 201
+
+    def test_login_account(self):
+        """Test that a user cannot login with unhashed password."""
+        response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(unhashed_password), content_type='application/json',
+            headers=self.get_token())
+        result = json.loads(response.data.decode())
+        self.assertEqual(result['message'], 'Invalid Email or Password')
+        assert response.status_code == 401
 
     def test_get_users(self):
         """Test get all users."""
@@ -195,3 +205,21 @@ class TestUsersAccount(BaseTest):
         result = json.loads(response.data.decode())
         assert response.status_code == 404
         assert result['message'] == "resource not found"
+
+    def test_reset_email(self):
+        """Test that a user can provide an existing email to request for password reset."""
+        response = self.client.post(
+            '/api/v1/reset', data=json.dumps(reset_email), content_type='application/json',
+            headers=self.get_token())
+        result = json.loads(response.data.decode())
+        self.assertEqual(result['message'], 'Check your email')
+        assert response.status_code == 201
+
+    def test_unexisting_reset_email(self):
+        """Test that a user can provide an existing email to request for password reset."""
+        response = self.client.post(
+            '/api/v1/reset', data=json.dumps(unexisting_reset_email), content_type='application/json',
+            headers=self.get_token())
+        result = json.loads(response.data.decode())
+        self.assertEqual(result['message'], 'User not found')
+        assert response.status_code == 404
