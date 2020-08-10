@@ -147,7 +147,7 @@ def reset_with_token(token):
             password_hash = generate_password_hash(password)
             json.loads(UsersModel().reset_password(
                 password_hash, user_id))
-            return redirect(url_for('auth_v1.login'))
+            return render_template('reset_success.html')
         return raise_error(404, "User not found")
     return render_template('reset_form.html', form=form, token=token)
 
